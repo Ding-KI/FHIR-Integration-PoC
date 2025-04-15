@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhir-server
+  labels:
+    app: fhir-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fhir-server
+  template:
+    metadata:
+      labels:
+        app: fhir-server
+    spec:
+      containers:
+      - name: fhir-server
+        image: hapiproject/hapi:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/fhir"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: fhir-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fhir-secrets
+              key: db-password
+        - name: HAPI_FHIR_VERSION
+          value: "R4"
+        - name: HAPI_FHIR_ALLOW_MULTIPLE_DELETE
+          value: "true"
+        - name: HAPI_FHIR_ALLOW_EXTERNAL_REFERENCES
+          value: "true"
+        readinessProbe:
+          httpGet:
+            path: /fhir/metadata
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /fhir/metadata
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 15
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+  labels:
+    app: postgres-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "fhir"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: fhir-secrets
+              key: db-username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fhir-secrets
+              key: db-password
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - fhiruser
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc 
