@@ -1,1 +1,52 @@
-1
+# FHIR Server POC for Gen3 Integration
+
+This is a proof-of-concept implementation demonstrating how to deploy a HAPI FHIR server within a Kubernetes environment similar to Gen3's infrastructure.
+
+## Components
+
+- HAPI FHIR Server (R4)
+- PostgreSQL Database
+- Docker Compose for local development
+- Kubernetes deployment configurations
+
+## Local Development Setup
+
+1. Ensure Docker and Docker Compose are installed
+2. Clone this repository
+3. Start the services:
+   ```bash
+   docker-compose up -d
+   ```
+4. Access the FHIR server at: http://localhost:8080/fhir/metadata
+
+## Kubernetes Deployment
+
+1. Create the secrets:
+   ```bash
+   kubectl create secret generic fhir-secrets \
+     --from-literal=db-username=fhiruser \
+     --from-literal=db-password=fhirpassword
+   ```
+
+2. Create the persistent volume claim:
+   ```bash
+   kubectl apply -f kubernetes/pvc.yaml
+   ```
+
+3. Deploy the services:
+   ```bash
+   kubectl apply -f kubernetes/deployment.yaml
+   kubectl apply -f kubernetes/service.yaml
+   ```
+
+## API Endpoints
+
+- FHIR Base URL: http://localhost:8080/fhir
+- Metadata: http://localhost:8080/fhir/metadata
+- Health Check: http://localhost:8080/fhir/metadata
+
+## Notes
+
+- This is a minimal implementation for demonstration purposes
+- Security configurations should be enhanced for production use
+- Database credentials should be properly managed in a production environment 
