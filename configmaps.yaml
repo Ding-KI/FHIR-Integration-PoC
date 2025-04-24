@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hapi-fhir-config
+data:
+  spring.datasource.url: "jdbc:postgresql://postgres:5432/hapi"
+  db-name: "hapi"
+  application.yaml: |
+    spring:
+      datasource:
+        driverClassName: org.postgresql.Driver
+      jpa:
+        properties:
+          hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+          hibernate.search.enabled: false
+
+    hapi:
+      fhir:
+        server_address: http://localhost:8080/fhir
+        default_encoding: json
+        fhir_version: r4
+        enable_index_missing_fields: false
+        auto_create_placeholder_references: false
+        implementationguides:
+          swiss:
+            name: swiss.mednet.fhir
+            version: 0.8.0
+        supported_resource_types:
+          - Patient
+          - Observation
+          - Organization
+          - Practitioner
+        cors:
+          allow_credentials: true
+          allowed_origin:
+            - "*"
+
+    server:
+      port: 8080
+      servlet:
+        context-path: / 
